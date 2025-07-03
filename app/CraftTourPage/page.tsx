@@ -2,9 +2,28 @@
 
 import { useState, useEffect } from "react";
 
+interface SelectedElement {
+  timestamp: number;
+  tagName: string;
+  id: string | null;
+  className: string | null;
+  textContent: string | null;
+  position: {
+    x: number;
+    y: number;
+    width: number;
+    height: number;
+  };
+  cssSelector: string;
+  url: string;
+  xpath?: string;
+}
+
 export default function CraftTourPage() {
   const [websiteUrl, setWebsiteUrl] = useState("");
-  const [selectedElements, setSelectedElements] = useState<unknown[]>([]);
+  const [selectedElements, setSelectedElements] = useState<SelectedElement[]>(
+    []
+  );
   const [isListening, setIsListening] = useState(false);
 
   // Generate the bookmarklet code
