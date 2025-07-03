@@ -195,7 +195,7 @@ export async function POST(request: NextRequest) {
 }
 
 // GET endpoint to fetch stored tour steps
-export async function GET(request: NextRequest) {
+export async function GET() {
   try {
     return NextResponse.json(
       {
@@ -211,7 +211,7 @@ export async function GET(request: NextRequest) {
         },
       }
     );
-  } catch (error) {
+  } catch {
     return NextResponse.json(
       { error: "Failed to fetch tour steps" },
       {
@@ -227,7 +227,7 @@ export async function GET(request: NextRequest) {
 }
 
 // Handle CORS for the Chrome extension
-export async function OPTIONS(request: NextRequest) {
+export async function OPTIONS() {
   return new NextResponse(null, {
     status: 200,
     headers: {

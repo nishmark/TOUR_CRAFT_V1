@@ -137,7 +137,7 @@ export default function BuildTourPage() {
       console.error("Failed to fetch tour steps:", error);
       setIsConnected(false);
     }
-  }, []);
+  }, [lastCount]);
 
   useEffect(() => {
     // Fetch immediately
