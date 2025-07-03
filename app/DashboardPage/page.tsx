@@ -1,6 +1,7 @@
 "use client";
 import { useSession } from "next-auth/react";
 import Header from "../components/Header";
+import Image from "next/image";
 
 export default function Page() {
   const { data: session, status } = useSession();
@@ -40,10 +41,12 @@ export default function Page() {
             {/* User Info Card */}
             <div className="bg-white shadow rounded-lg p-6 mb-6">
               <div className="flex items-center">
-                <img
+                <Image
                   className="h-20 w-20 rounded-full"
                   src={user?.image || "/Logo.jpeg"}
                   alt="Profile"
+                  width={80}
+                  height={80}
                 />
                 <div className="ml-6">
                   <h2 className="text-2xl font-bold text-gray-900">

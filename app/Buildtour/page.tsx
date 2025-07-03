@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 
 interface TourStep {
   // Basic element identification
@@ -116,7 +116,7 @@ export default function BuildTourPage() {
   const [lastCount, setLastCount] = useState(0);
 
   // Fetch tour steps from API
-  const fetchTourSteps = async () => {
+  const fetchTourSteps = useCallback(async () => {
     try {
       const response = await fetch("/api/Buildtour");
       if (response.ok) {
@@ -137,7 +137,7 @@ export default function BuildTourPage() {
       console.error("Failed to fetch tour steps:", error);
       setIsConnected(false);
     }
-  };
+  }, []);
 
   useEffect(() => {
     // Fetch immediately
@@ -147,7 +147,7 @@ export default function BuildTourPage() {
     const interval = setInterval(fetchTourSteps, 2000);
 
     return () => clearInterval(interval);
-  }, []);
+  }, [fetchTourSteps]);
 
   const clearSteps = async () => {
     // For now, just clear the UI. In production, you'd call a delete API
@@ -322,16 +322,16 @@ export default function BuildTourPage() {
 
                         {step.textContent && (
                           <p className="text-gray-600 text-sm">
-                            <span className="font-semibold">Text:</span> "
+                            <span className="font-semibold">Text:</span> &quot;
                             {step.textContent.substring(0, 100)}
-                            {step.textContent.length > 100 ? "..." : ""}"
+                            {step.textContent.length > 100 ? "..." : ""}&quot;
                           </p>
                         )}
 
                         {step.value && (
                           <p className="text-gray-600 text-sm">
-                            <span className="font-semibold">Value:</span> "
-                            {step.value}"
+                            <span className="font-semibold">Value:</span> &quot;
+                            {step.value}&quot;
                           </p>
                         )}
 

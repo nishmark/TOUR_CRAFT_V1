@@ -14,6 +14,7 @@ import { PlusIcon } from "@heroicons/react/20/solid";
 import { useRouter } from "next/navigation";
 import { signOut } from "next-auth/react";
 import { useSession } from "next-auth/react";
+import Image from "next/image";
 
 const navigation = [
   { name: "Dashboard", href: "/DashboardPage", current: true },
@@ -42,7 +43,13 @@ export default function Example() {
       <Disclosure as="nav" className="bg-gray-800">
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
           <div className="flex h-16 justify-between items-center">
-            <img alt="Your Company" src="/Logo.jpeg" className="h-20 w-auto" />
+            <Image
+              alt="Your Company"
+              src="/Logo.jpeg"
+              className="h-20 w-auto"
+              width={80}
+              height={80}
+            />
             <div className="text-white">Loading...</div>
           </div>
         </div>
@@ -55,7 +62,13 @@ export default function Example() {
       <Disclosure as="nav" className="bg-gray-800">
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
           <div className="flex h-16 justify-between items-center">
-            <img alt="Your Company" src="/Logo.jpeg" className="h-20 w-auto" />
+            <Image
+              alt="Your Company"
+              src="/Logo.jpeg"
+              className="h-20 w-auto"
+              width={80}
+              height={80}
+            />
             <button
               type="button"
               onClick={() => router.push("/LoginPage")}
@@ -93,10 +106,12 @@ export default function Example() {
               </DisclosureButton>
             </div>
             <div className="flex shrink-0 items-center">
-              <img
+              <Image
                 alt="Your Company"
                 src="/Logo.jpeg"
                 className="h-20 w-auto ml-40"
+                width={80}
+                height={80}
               />
             </div>
             <div className="hidden md:ml-6 md:flex md:items-center md:space-x-4">
@@ -144,10 +159,12 @@ export default function Example() {
                 <MenuButton className="relative flex rounded-full bg-gray-800 text-sm focus:outline-hidden focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-offset-2 focus-visible:ring-offset-gray-800">
                   <span className="absolute -inset-1.5" />
                   <span className="sr-only">Open user menu</span>
-                  <img
+                  <Image
                     alt=""
                     src={user?.image || "/Logo.jpeg"}
                     className="size-8 rounded-full"
+                    width={32}
+                    height={32}
                   />
                 </MenuButton>
               </div>
@@ -207,10 +224,12 @@ export default function Example() {
         <div className="border-t border-gray-700 pt-4 pb-3">
           <div className="flex items-center px-5 sm:px-6">
             <div className="shrink-0">
-              <img
+              <Image
                 alt=""
                 src={user?.image || "/Logo.jpeg"}
                 className="size-10 rounded-full"
+                width={40}
+                height={40}
               />
             </div>
             <div className="ml-3">

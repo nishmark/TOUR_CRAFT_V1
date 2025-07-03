@@ -113,7 +113,7 @@ interface RequestBody {
 }
 
 // Store tour steps in memory (in production, use a database)
-let tourSteps: Array<TourData & { metadata: any }> = [];
+let tourSteps: Array<TourData & { metadata: unknown }> = [];
 
 export async function POST(request: NextRequest) {
   try {

@@ -4,7 +4,7 @@ import { useState, useEffect } from "react";
 
 export default function CraftTourPage() {
   const [websiteUrl, setWebsiteUrl] = useState("");
-  const [selectedElements, setSelectedElements] = useState<any[]>([]);
+  const [selectedElements, setSelectedElements] = useState<unknown[]>([]);
   const [isListening, setIsListening] = useState(false);
 
   // Generate the bookmarklet code
