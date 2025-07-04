@@ -178,57 +178,11 @@ export default function BuildTourPage() {
     checkLocalhost();
   }, []);
 
-  // Smart Polling - only polls when page is visible AND not on localhost
+  // Initial data fetch on component mount
   useEffect(() => {
-    let interval: NodeJS.Timeout;
-
-    const startPolling = () => {
-      // Don't start polling if we're on localhost development
-      if (isLocalhost) {
-        console.log("🔧 Local development detected - polling disabled");
-        // Just fetch once to get initial data
-        fetchTourSteps();
-        return;
-      }
-
-      // Fetch immediately
-      fetchTourSteps();
-
-      // Poll every 5 seconds only when page is visible
-      interval = setInterval(() => {
-        if (document.visibilityState === "visible") {
-          fetchTourSteps();
-        }
-      }, 5000);
-    };
-
-    const stopPolling = () => {
-      if (interval) {
-        clearInterval(interval);
-      }
-    };
-
-    // Start polling when component mounts
-    startPolling();
-
-    // Stop polling when page becomes hidden, resume when visible (only for non-localhost)
-    const handleVisibilityChange = () => {
-      if (isLocalhost) return; // Don't handle visibility changes on localhost
-
-      if (document.visibilityState === "visible") {
-        startPolling();
-      } else {
-        stopPolling();
-      }
-    };
-
-    document.addEventListener("visibilitychange", handleVisibilityChange);
-
-    return () => {
-      stopPolling();
-      document.removeEventListener("visibilitychange", handleVisibilityChange);
-    };
-  }, [fetchTourSteps, isLocalhost]);
+    // Fetch data once when component mounts
+    fetchTourSteps();
+  }, [fetchTourSteps]);
 
   const clearSteps = async () => {
     try {
@@ -388,9 +342,7 @@ export default function BuildTourPage() {
                 </h3>
                 <p className="text-gray-600">
                   {isConnected
-                    ? isLocalhost
-                      ? "Connected - Local development mode (polling disabled)"
-                      : "Connected - Smart polling active"
+                    ? "Connected - Use Refresh button to load new steps"
                     : "Connecting to tour data..."}
                 </p>
               </div>
@@ -641,9 +593,7 @@ export default function BuildTourPage() {
             </code>
           </p>
           <p className="text-xs text-gray-400 mt-1">
-            {isLocalhost
-              ? "Local development mode - polling disabled"
-              : "Smart polling every 5 seconds when page is visible"}
+            Click the Refresh button above to load the latest tour steps
           </p>
         </div>
       </div>
