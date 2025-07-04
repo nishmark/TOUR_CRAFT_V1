@@ -7,7 +7,7 @@ let prisma: PrismaClient;
 
 try {
   prisma = new PrismaClient();
-} catch (error) {
+} catch (error: unknown) {
   console.error("❌ Failed to initialize Prisma client:", error);
   prisma = null as unknown as PrismaClient;
 }
