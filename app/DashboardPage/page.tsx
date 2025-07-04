@@ -116,7 +116,7 @@ export default function Page() {
     setDeletingTours(prev => new Set(prev).add(tourId));
 
     try {
-      const response = await fetch(`/api/tours/${tourId}`, {
+      const response = await fetch(`/api/tours?id=${tourId}`, {
         method: 'DELETE',
         headers: {
           'Content-Type': 'application/json',

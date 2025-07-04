@@ -51,3 +51,52 @@ export async function GET(request: NextRequest) {
     );
   }
 }
+
+export async function DELETE(request: NextRequest) {
+  try {
+    const { searchParams } = new URL(request.url);
+    const tourId = searchParams.get("id");
+
+    if (!tourId) {
+      return NextResponse.json(
+        { error: "Tour ID is required" },
+        { status: 400 }
+      );
+    }
+
+    // First, check if the tour exists
+    const existingTour = await prisma.tcTour.findUnique({
+      where: { id: tourId },
+    });
+
+    if (!existingTour) {
+      return NextResponse.json(
+        { error: "Tour not found" },
+        { status: 404 }
+      );
+    }
+
+    // Delete the tour (this will cascade delete the steps due to the foreign key relationship)
+    await prisma.tcTour.delete({
+      where: { id: tourId },
+    });
+
+    console.log(`✅ Tour ${tourId} deleted successfully`);
+
+    return NextResponse.json({
+      success: true,
+      message: "Tour deleted successfully",
+      tourId: tourId,
+    });
+  } catch (error) {
+    console.error("❌ Error deleting tour:", error);
+
+    return NextResponse.json(
+      {
+        error: "Failed to delete tour",
+        details: error instanceof Error ? error.message : "Unknown error",
+      },
+      { status: 500 }
+    );
+  }
+}
