@@ -138,7 +138,20 @@ export default function BuildTourPage() {
       const response = await fetch("/api/Buildtour");
       if (response.ok) {
         const data = await response.json();
-        setTourSteps(data.steps || []);
+        const newSteps = data.steps || [];
+        
+        // Preserve user messages from current state when updating with new data
+        setTourSteps(prevSteps => {
+          return newSteps.map((newStep: TourStep, index: number) => {
+            const existingStep = prevSteps[index];
+            return {
+              ...newStep,
+              // Preserve the user message if it exists in the current state
+              MessageToUser: existingStep?.MessageToUser || newStep.MessageToUser || ""
+            };
+          });
+        });
+        
         setIsConnected(true);
       } else {
         setIsConnected(false);
@@ -586,6 +599,7 @@ export default function BuildTourPage() {
                             Write message for user:
                           </label>
                           <input
+                            key={`message-input-${index}-${step.stepNumber}`}
                             type="text"
                             value={step.MessageToUser || ""}
                             onChange={(e) =>
