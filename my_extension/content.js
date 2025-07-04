@@ -3,26 +3,16 @@ let isTourBuilding = false;
 let highlightedElement = null;
 let stepCounter = 0;
 
-// Dynamic API endpoint detection
+// API endpoint configuration
 function getApiEndpoint() {
-  console.log("🔍 Checking hostname:", window.location.hostname);
-  console.log("🔍 Full URL:", window.location.href);
-
-  // For testing, always use localhost
-  // Comment out the line below when ready for production
-  return "http://localhost:3000/api/Buildtour";
+  // Production URL - always use this for hosted app
+  const productionUrl = "https://tour-craft-v1.vercel.app/api/Buildtour";
   
-  // Check if we're on localhost (development)
-  if (
-    window.location.hostname === "localhost" ||
-    window.location.hostname === "127.0.0.1"
-  ) {
-    console.log("🔧 Development mode detected, using localhost API");
-    return "http://localhost:3000/api/Buildtour";
-  }
-  // Production - use Vercel URL
-  console.log("🚀 Production mode detected, using Vercel API");
-  return "https://tour-craft-v1.vercel.app/api/Buildtour";
+  console.log("🚀 Using production Vercel API:", productionUrl);
+  return productionUrl;
+  
+  // For local development, uncomment the line below and comment out the return above:
+  // return "http://localhost:3000/api/Buildtour";
 }
 
 const API_ENDPOINT = getApiEndpoint();
