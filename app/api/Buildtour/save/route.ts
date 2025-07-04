@@ -9,7 +9,7 @@ try {
   prisma = new PrismaClient();
 } catch (error) {
   console.error("❌ Failed to initialize Prisma client:", error);
-  prisma = null as any;
+  prisma = null as unknown as PrismaClient;
 }
 
 interface TourSaveData {
