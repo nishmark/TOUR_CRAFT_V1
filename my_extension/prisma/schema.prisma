@@ -1,0 +1,53 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider     = "mysql"
+  url          = env("DATABASE_URL")
+  relationMode = "prisma"
+}
+
+model Tour {
+  id          String      @id @default(cuid())
+  name        String?
+  description String?     @db.Text
+  website     String?
+  isActive    Boolean     @default(true)
+  createdAt   DateTime    @default(now())
+  updatedAt   DateTime    @updatedAt
+  
+  steps       TourStep[]
+  
+  @@map("tours")
+}
+
+model TourStep {
+  id               String   @id @default(cuid())
+  tourId           String?
+  stepNumber       Int
+  selector         String   @db.Text
+  tagName          String
+  textContent      String?  @db.Text
+  attributes       Json?    // Store element attributes as JSON
+  positionX        Float
+  positionY        Float
+  width            Float
+  height           Float
+  viewportX        Float?
+  viewportY        Float?
+  url              String   @db.Text
+  pageTitle        String?  @db.Text
+  userAgent        String?  @db.Text
+  timestamp        DateTime
+  createdAt        DateTime @default(now())
+  
+  tour             Tour?    @relation(fields: [tourId], references: [id], onDelete: Cascade)
+  
+  @@index([tourId])
+  @@index([stepNumber])
+  @@map("tour_steps")
+} 

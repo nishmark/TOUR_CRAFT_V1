@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Extension Debug Test Page</title>
+    <style>
+      body {
+        font-family: Arial, sans-serif;
+        max-width: 800px;
+        margin: 0 auto;
+        padding: 20px;
+        background: #f5f5f5;
+      }
+      .test-element {
+        background: white;
+        border: 2px solid #ddd;
+        border-radius: 8px;
+        padding: 20px;
+        margin: 20px 0;
+        cursor: pointer;
+        transition: all 0.3s ease;
+      }
+      .test-element:hover {
+        border-color: #007bff;
+        transform: translateY(-2px);
+      }
+      .button-test {
+        background: #007bff;
+        color: white;
+        border: none;
+        padding: 15px 30px;
+        border-radius: 5px;
+        font-size: 16px;
+        cursor: pointer;
+        margin: 10px;
+      }
+      .form-test {
+        background: white;
+        padding: 20px;
+        border-radius: 8px;
+        border: 1px solid #ddd;
+      }
+      .form-test input {
+        width: 100%;
+        padding: 10px;
+        margin: 10px 0;
+        border: 1px solid #ddd;
+        border-radius: 4px;
+      }
+      .debug-info {
+        background: #e8f4f8;
+        border: 1px solid #bee5eb;
+        border-radius: 4px;
+        padding: 15px;
+        margin: 20px 0;
+      }
+    </style>
+  </head>
+  <body>
+    <h1 id="main-title">🧪 Extension Debug Test Page</h1>
+
+    <div class="debug-info">
+      <h3>Debug Instructions:</h3>
+      <ol>
+        <li>Open Chrome DevTools (F12)</li>
+        <li>Check Console for content script loading messages</li>
+        <li>Click the extension icon to open popup</li>
+        <li>Try "Start Building Tour"</li>
+        <li>
+          If it works, you'll see elements highlight when you hover over them
+        </li>
+      </ol>
+    </div>
+
+    <div class="test-element" id="test-div-1">
+      <h3>Test Element 1 - Div with ID</h3>
+      <p>This div has an ID attribute. Click me to test tour recording!</p>
+    </div>
+
+    <div class="test-element" data-testid="special-section">
+      <h3>Test Element 2 - Div with Data Attribute</h3>
+      <p>This div has a data-testid attribute. Perfect for tour steps!</p>
+    </div>
+
+    <button class="button-test" onclick="alert('Button clicked!')">
+      🔘 Test Button
+    </button>
+
+    <div class="form-test">
+      <h3>Form Elements Test</h3>
+      <input type="text" placeholder="Enter your name" id="name-input" />
+      <input type="email" placeholder="Enter your email" id="email-input" />
+      <button class="button-test" type="submit">Submit Form</button>
+    </div>
+
+    <div class="test-element">
+      <h3>Nested Elements Test</h3>
+      <div class="nested-container">
+        <p>This paragraph is nested inside a div.</p>
+        <button class="button-test">Nested Button</button>
+        <ul>
+          <li>List item 1</li>
+          <li>List item 2</li>
+          <li>List item 3</li>
+        </ul>
+      </div>
+    </div>
+
+    <script>
+      console.log("🧪 Debug test page loaded");
+      console.log("📍 Current URL:", window.location.href);
+
+      // Add click listeners to test elements
+      document.querySelectorAll(".test-element").forEach((element, index) => {
+        element.addEventListener("click", () => {
+          console.log(`🖱️ Test element ${index + 1} clicked:`, element);
+        });
+      });
+    </script>
+  </body>
+</html>

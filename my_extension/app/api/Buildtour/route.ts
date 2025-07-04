@@ -101,9 +101,6 @@ interface TourData {
     tabIndex: number;
     title: string;
   };
-
-  // User message for this step
-  MessageToUser?: string;
 }
 
 interface RequestBody {
@@ -116,7 +113,7 @@ interface RequestBody {
 }
 
 // Store tour steps in memory (in production, use a database)
-let tourSteps: Array<TourData & { metadata: unknown }> = [];
+let tourSteps: Array<TourData & { metadata: any }> = [];
 
 export async function POST(request: NextRequest) {
   try {
@@ -131,7 +128,7 @@ export async function POST(request: NextRequest) {
           status: 401,
           headers: {
             "Access-Control-Allow-Origin": "*",
-            "Access-Control-Allow-Methods": "POST, GET, OPTIONS, DELETE",
+            "Access-Control-Allow-Methods": "POST, GET, OPTIONS",
             "Access-Control-Allow-Headers": "Content-Type, Authorization",
           },
         }
@@ -173,7 +170,7 @@ export async function POST(request: NextRequest) {
       status: 200,
       headers: {
         "Access-Control-Allow-Origin": "*",
-        "Access-Control-Allow-Methods": "POST, GET, OPTIONS, DELETE",
+        "Access-Control-Allow-Methods": "POST, GET, OPTIONS",
         "Access-Control-Allow-Headers": "Content-Type, Authorization",
       },
     });
@@ -189,7 +186,7 @@ export async function POST(request: NextRequest) {
         status: 500,
         headers: {
           "Access-Control-Allow-Origin": "*",
-          "Access-Control-Allow-Methods": "POST, GET, OPTIONS, DELETE",
+          "Access-Control-Allow-Methods": "POST, GET, OPTIONS",
           "Access-Control-Allow-Headers": "Content-Type, Authorization",
         },
       }
@@ -198,7 +195,7 @@ export async function POST(request: NextRequest) {
 }
 
 // GET endpoint to fetch stored tour steps
-export async function GET() {
+export async function GET(request: NextRequest) {
   try {
     return NextResponse.json(
       {
@@ -209,84 +206,19 @@ export async function GET() {
       {
         headers: {
           "Access-Control-Allow-Origin": "*",
-          "Access-Control-Allow-Methods": "POST, GET, OPTIONS, DELETE",
+          "Access-Control-Allow-Methods": "POST, GET, OPTIONS",
           "Access-Control-Allow-Headers": "Content-Type, Authorization",
         },
       }
     );
-  } catch {
+  } catch (error) {
     return NextResponse.json(
       { error: "Failed to fetch tour steps" },
       {
         status: 500,
         headers: {
           "Access-Control-Allow-Origin": "*",
-          "Access-Control-Allow-Methods": "POST, GET, OPTIONS, DELETE",
-          "Access-Control-Allow-Headers": "Content-Type, Authorization",
-        },
-      }
-    );
-  }
-}
-
-// PUT endpoint to update/reorder tour steps
-export async function PUT(request: NextRequest) {
-  try {
-    // Check API key for basic authentication
-    const authHeader = request.headers.get("authorization");
-    const expectedApiKey = "Bearer apikey1234";
-
-    if (authHeader !== expectedApiKey) {
-      return NextResponse.json(
-        { error: "Unauthorized" },
-        {
-          status: 401,
-          headers: {
-            "Access-Control-Allow-Origin": "*",
-            "Access-Control-Allow-Methods": "POST, GET, OPTIONS, DELETE, PUT",
-            "Access-Control-Allow-Headers": "Content-Type, Authorization",
-          },
-        }
-      );
-    }
-
-    // Parse the request body
-    const body = await request.json();
-    const { steps } = body;
-
-    // Update the tour steps with the new order
-    if (Array.isArray(steps)) {
-      tourSteps = steps;
-      console.log("🔄 Tour steps reordered:", steps.length, "steps");
-    }
-
-    return NextResponse.json(
-      {
-        success: true,
-        message: "Tour steps reordered successfully",
-        count: tourSteps.length,
-      },
-      {
-        headers: {
-          "Access-Control-Allow-Origin": "*",
-          "Access-Control-Allow-Methods": "POST, GET, OPTIONS, DELETE, PUT",
-          "Access-Control-Allow-Headers": "Content-Type, Authorization",
-        },
-      }
-    );
-  } catch (error) {
-    console.error("❌ Error reordering tour steps:", error);
-
-    return NextResponse.json(
-      {
-        error: "Failed to reorder tour steps",
-        details: error instanceof Error ? error.message : "Unknown error",
-      },
-      {
-        status: 500,
-        headers: {
-          "Access-Control-Allow-Origin": "*",
-          "Access-Control-Allow-Methods": "POST, GET, OPTIONS, DELETE, PUT",
+          "Access-Control-Allow-Methods": "POST, GET, OPTIONS",
           "Access-Control-Allow-Headers": "Content-Type, Authorization",
         },
       }
@@ -295,55 +227,13 @@ export async function PUT(request: NextRequest) {
 }
 
 // Handle CORS for the Chrome extension
-export async function OPTIONS() {
+export async function OPTIONS(request: NextRequest) {
   return new NextResponse(null, {
     status: 200,
     headers: {
       "Access-Control-Allow-Origin": "*",
-      "Access-Control-Allow-Methods": "POST, GET, OPTIONS, DELETE, PUT",
+      "Access-Control-Allow-Methods": "POST, GET, OPTIONS",
       "Access-Control-Allow-Headers": "Content-Type, Authorization",
     },
   });
-}
-
-// DELETE endpoint to clear all tour steps
-export async function DELETE() {
-  try {
-    // Clear all tour steps from memory
-    tourSteps = [];
-
-    console.log("🗑️ All tour steps cleared");
-
-    return NextResponse.json(
-      {
-        success: true,
-        message: "All tour steps cleared successfully",
-        count: 0,
-      },
-      {
-        headers: {
-          "Access-Control-Allow-Origin": "*",
-          "Access-Control-Allow-Methods": "POST, GET, OPTIONS, DELETE",
-          "Access-Control-Allow-Headers": "Content-Type, Authorization",
-        },
-      }
-    );
-  } catch (error) {
-    console.error("❌ Error clearing tour steps:", error);
-
-    return NextResponse.json(
-      {
-        error: "Failed to clear tour steps",
-        details: error instanceof Error ? error.message : "Unknown error",
-      },
-      {
-        status: 500,
-        headers: {
-          "Access-Control-Allow-Origin": "*",
-          "Access-Control-Allow-Methods": "POST, GET, OPTIONS, DELETE",
-          "Access-Control-Allow-Headers": "Content-Type, Authorization",
-        },
-      }
-    );
-  }
 }

@@ -1,7 +1,8 @@
 // app/signin/page.tsx
 import React from "react";
-import { signIn, auth } from "@/auth";
 import { redirect } from "next/navigation";
+import { auth } from "@/auth";
+import { signInWithGoogleToDashboard } from "../actions/auth";
 
 export default async function SignIn() {
   const session = await auth();
@@ -21,12 +22,7 @@ export default async function SignIn() {
         <div className="text-center">
           <h2 className="text-3xl font-bold">Sign in to your account</h2>
         </div>
-        <form
-          action={async () => {
-            "use server";
-            await signIn("google", { redirectTo: "/DashboardPage" });
-          }}
-        >
+        <form action={signInWithGoogleToDashboard}>
           <button
             className="w-full bg-blue-500 text-white p-3 rounded-md hover:bg-blue-600 transition-colors"
             type="submit"

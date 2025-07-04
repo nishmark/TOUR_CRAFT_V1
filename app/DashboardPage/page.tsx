@@ -1,10 +1,77 @@
 "use client";
 import { useSession } from "next-auth/react";
+import { useEffect, useState } from "react";
 import Header from "../components/Header";
 import Image from "next/image";
 
+interface UserData {
+  id: string;
+  email: string;
+  name: string;
+  emailVerified: boolean;
+}
+
+interface TourStep {
+  stepNumber: number;
+  textContent: string;
+  elementType: string;
+  elementId: string;
+  selector: string;
+  url: string;
+  clickable: string;
+  MessageToUser?: string;
+}
+
+interface Tour {
+  id: string;
+  name: string;
+  totalSteps: number;
+  createdAt: string;
+  updatedAt: string;
+  motherUrl: string;
+  steps: TourStep[];
+}
+
 export default function Page() {
   const { data: session, status } = useSession();
+  const [userData, setUserData] = useState<UserData | null>(null);
+  const [tours, setTours] = useState<Tour[]>([]);
+  const [loading, setLoading] = useState(false);
+  const [toursLoading, setToursLoading] = useState(false);
+
+  useEffect(() => {
+    if (session?.user?.email) {
+      setLoading(true);
+      fetch("/api/user")
+        .then((res) => res.json())
+        .then((data) => {
+          if (data.user) {
+            setUserData(data.user);
+            // Fetch tours for this user
+            setToursLoading(true);
+            fetch(`/api/tours?userId=${data.user.id}`)
+              .then((res) => res.json())
+              .then((tourData) => {
+                if (tourData.success) {
+                  setTours(tourData.tours || []);
+                }
+              })
+              .catch((error) => {
+                console.error("Error fetching tours:", error);
+              })
+              .finally(() => {
+                setToursLoading(false);
+              });
+          }
+        })
+        .catch((error) => {
+          console.error("Error fetching user data:", error);
+        })
+        .finally(() => {
+          setLoading(false);
+        });
+    }
+  }, [session]);
 
   if (status === "loading") {
     return (
@@ -29,6 +96,16 @@ export default function Page() {
   }
 
   const { user } = session;
+
+  const formatDate = (dateString: string) => {
+    return new Date(dateString).toLocaleDateString("en-US", {
+      year: "numeric",
+      month: "long",
+      day: "numeric",
+      hour: "2-digit",
+      minute: "2-digit",
+    });
+  };
 
   return (
     <div>
@@ -56,27 +133,149 @@ export default function Page() {
                     Email: {user?.email || "No email provided"}
                   </p>
                   <p className="text-gray-600">
-                    User ID: {user?.id || "No ID available"}
+                    User ID:{" "}
+                    {userData?.id ||
+                      (loading ? "Loading..." : "No ID available")}
                   </p>
                 </div>
               </div>
             </div>
 
-            {/* Session Information */}
+            {/* Tours Section */}
             <div className="bg-white shadow rounded-lg p-6 mb-6">
-              <h3 className="text-lg font-medium text-gray-900 mb-4">
-                Session Information
+              <h3 className="text-xl font-semibold text-gray-900 mb-4">
+                My Tours
               </h3>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div>
-                  <p className="text-sm font-medium text-gray-500">Status</p>
-                  <p className="text-sm text-gray-900">Authenticated</p>
+
+              {toursLoading ? (
+                <div className="flex justify-center items-center py-8">
+                  <p className="text-lg text-gray-600">Loading tours...</p>
                 </div>
-                <div>
-                  <p className="text-sm font-medium text-gray-500">Provider</p>
-                  <p className="text-sm text-gray-900">Google</p>
+              ) : tours.length === 0 ? (
+                <div className="text-center py-8">
+                  <p className="text-gray-600">
+                    You haven't created any tours yet.
+                  </p>
+                  <p className="text-sm text-gray-500 mt-2">
+                    Start by crafting your first tour!
+                  </p>
                 </div>
-              </div>
+              ) : (
+                <div className="space-y-6">
+                  {tours.map((tour) => (
+                    <div
+                      key={tour.id}
+                      className="border border-gray-200 rounded-lg p-6"
+                    >
+                      <div className="flex justify-between items-start mb-4">
+                        <div>
+                          <h4 className="text-lg font-semibold text-gray-900">
+                            {tour.name}
+                          </h4>
+                          <p className="text-sm text-gray-600">
+                            Created: {formatDate(tour.createdAt)}
+                          </p>
+                          <p className="text-sm text-gray-600">
+                            Total Steps: {tour.totalSteps}
+                          </p>
+                          <p className="text-sm text-gray-600">
+                            URL: {tour.motherUrl}
+                          </p>
+                        </div>
+                      </div>
+
+                      {/* Tour Steps */}
+                      <div className="mt-4">
+                        <h5 className="text-md font-medium text-gray-900 mb-3">
+                          Tour Steps:
+                        </h5>
+                        <div className="space-y-4">
+                          {tour.steps &&
+                            Array.isArray(tour.steps) &&
+                            tour.steps.map((step, index) => (
+                              <div
+                                key={index}
+                                className="bg-gray-50 rounded-lg p-4 border border-gray-200"
+                              >
+                                <div className="flex items-center mb-3">
+                                  <span className="font-bold text-lg text-indigo-600 bg-indigo-100 px-3 py-1 rounded-full">
+                                    Step {step.stepNumber}
+                                  </span>
+                                </div>
+                                <div className="space-y-2 text-sm">
+                                  <div className="flex">
+                                    <span className="font-medium text-gray-700 w-32">
+                                      Text In This Element:
+                                    </span>
+                                    <span className="text-gray-600 flex-1">
+                                      {step.textContent || "No text content"}
+                                    </span>
+                                  </div>
+                                  <div className="flex">
+                                    <span className="font-medium text-gray-700 w-32">
+                                      Element Type:
+                                    </span>
+                                    <span className="text-gray-600 flex-1">
+                                      {step.elementType}
+                                    </span>
+                                  </div>
+                                  <div className="flex">
+                                    <span className="font-medium text-gray-700 w-32">
+                                      Element ID:
+                                    </span>
+                                    <span className="text-gray-600 flex-1">
+                                      {step.elementId || "No ID"}
+                                    </span>
+                                  </div>
+                                  <div className="flex">
+                                    <span className="font-medium text-gray-700 w-32">
+                                      Selector:
+                                    </span>
+                                    <span className="text-gray-600 flex-1 font-mono text-xs">
+                                      {step.selector}
+                                    </span>
+                                  </div>
+                                  <div className="flex">
+                                    <span className="font-medium text-gray-700 w-32">
+                                      URL:
+                                    </span>
+                                    <span className="text-gray-600 flex-1 text-xs break-all">
+                                      {step.url}
+                                    </span>
+                                  </div>
+                                  <div className="flex">
+                                    <span className="font-medium text-gray-700 w-32">
+                                      Clickable:
+                                    </span>
+                                    <span className="text-gray-600 flex-1">
+                                      {step.clickable || "No"}
+                                    </span>
+                                  </div>
+                                  <div className="flex">
+                                    <span className="font-medium text-gray-700 w-32">
+                                      Message To User:
+                                    </span>
+                                    <span className="text-gray-600 flex-1">
+                                      {step.MessageToUser ? (
+                                        <span className="bg-blue-50 text-blue-800 px-2 py-1 rounded border border-blue-200">
+                                          {step.MessageToUser}
+                                        </span>
+                                      ) : (
+                                        <span className="text-gray-400 italic">
+                                          No message set
+                                        </span>
+                                      )}
+                                    </span>
+                                  </div>
+                                </div>
+                              </div>
+                            ))}
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
             </div>
 
             {/* Quick Actions */}
@@ -84,7 +283,7 @@ export default function Page() {
               <h3 className="text-lg font-medium text-gray-900 mb-4">
                 Quick Actions
               </h3>
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <a
                   href="/CraftTourPage"
                   className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
@@ -97,12 +296,6 @@ export default function Page() {
                 >
                   Link TourCraft
                 </a>
-                <button
-                  type="button"
-                  className="inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md shadow-sm text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
-                >
-                  View Tours
-                </button>
               </div>
             </div>
           </div>

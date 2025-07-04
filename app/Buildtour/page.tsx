@@ -108,28 +108,57 @@ interface TourStep {
     url: string;
     title: string;
   };
+
+  // User message for this step
+  MessageToUser?: string;
 }
 
 export default function BuildTourPage() {
   const [tourSteps, setTourSteps] = useState<TourStep[]>([]);
   const [isConnected, setIsConnected] = useState(false);
   const [lastCount, setLastCount] = useState(0);
+  const [showSaveModal, setShowSaveModal] = useState(false);
+  const [tourName, setTourName] = useState("");
+  const [isSaving, setIsSaving] = useState(false);
 
-  // Fetch tour steps from API
+  // Function to update user message for a specific step
+  const updateUserMessage = async (stepIndex: number, message: string) => {
+    try {
+      const updatedSteps = [...tourSteps];
+      updatedSteps[stepIndex] = {
+        ...updatedSteps[stepIndex],
+        MessageToUser: message,
+      };
+
+      setTourSteps(updatedSteps);
+
+      // Update the step in the backend
+      const response = await fetch("/api/Buildtour", {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: "Bearer apikey1234",
+        },
+        body: JSON.stringify({ steps: updatedSteps }),
+      });
+
+      if (!response.ok) {
+        console.error("Failed to update user message");
+      }
+    } catch (error) {
+      console.error("Error updating user message:", error);
+    }
+  };
+
+  // Fetch function for getting tour steps
   const fetchTourSteps = useCallback(async () => {
     try {
       const response = await fetch("/api/Buildtour");
       if (response.ok) {
         const data = await response.json();
-        console.log("🔍 Raw API Response:", data);
-        console.log("🔍 First step data:", data.steps?.[0]);
         setTourSteps(data.steps || []);
+        setLastCount(data.steps?.length || 0);
         setIsConnected(true);
-
-        // Show notification if new steps were added
-        if (data.steps?.length > lastCount) {
-          setLastCount(data.steps.length);
-        }
       } else {
         setIsConnected(false);
       }
@@ -137,22 +166,177 @@ export default function BuildTourPage() {
       console.error("Failed to fetch tour steps:", error);
       setIsConnected(false);
     }
-  }, [lastCount]);
+  }, []);
 
+  // Smart Polling - only polls when page is visible
   useEffect(() => {
-    // Fetch immediately
-    fetchTourSteps();
+    let interval: NodeJS.Timeout;
 
-    // Then poll every 2 seconds for new data
-    const interval = setInterval(fetchTourSteps, 2000);
+    const startPolling = () => {
+      // Fetch immediately
+      fetchTourSteps();
 
-    return () => clearInterval(interval);
+      // Poll every 5 seconds only when page is visible
+      interval = setInterval(() => {
+        if (document.visibilityState === "visible") {
+          fetchTourSteps();
+        }
+      }, 5000);
+    };
+
+    const stopPolling = () => {
+      if (interval) {
+        clearInterval(interval);
+      }
+    };
+
+    // Start polling when component mounts
+    startPolling();
+
+    // Stop polling when page becomes hidden, resume when visible
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === "visible") {
+        startPolling();
+      } else {
+        stopPolling();
+      }
+    };
+
+    document.addEventListener("visibilitychange", handleVisibilityChange);
+
+    return () => {
+      stopPolling();
+      document.removeEventListener("visibilitychange", handleVisibilityChange);
+    };
   }, [fetchTourSteps]);
 
   const clearSteps = async () => {
-    // For now, just clear the UI. In production, you'd call a delete API
-    setTourSteps([]);
-    setLastCount(0);
+    try {
+      // Call the DELETE API to clear steps from backend
+      const response = await fetch("/api/Buildtour", {
+        method: "DELETE",
+      });
+
+      if (response.ok) {
+        // Clear the UI state
+        setTourSteps([]);
+        setLastCount(0);
+        console.log("✅ Tour steps cleared successfully");
+      } else {
+        console.error("❌ Failed to clear tour steps");
+      }
+    } catch (error) {
+      console.error("❌ Error clearing tour steps:", error);
+    }
+  };
+
+  const moveStepUp = (index: number) => {
+    if (index > 0) {
+      const newSteps = [...tourSteps];
+      const temp = newSteps[index];
+      newSteps[index] = newSteps[index - 1];
+      newSteps[index - 1] = temp;
+      setTourSteps(newSteps);
+      saveReorderedSteps(newSteps);
+    }
+  };
+
+  const moveStepDown = (index: number) => {
+    if (index < tourSteps.length - 1) {
+      const newSteps = [...tourSteps];
+      const temp = newSteps[index];
+      newSteps[index] = newSteps[index + 1];
+      newSteps[index + 1] = temp;
+      setTourSteps(newSteps);
+      saveReorderedSteps(newSteps);
+    }
+  };
+
+  const saveReorderedSteps = async (steps: TourStep[]) => {
+    try {
+      const response = await fetch("/api/Buildtour", {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: "Bearer apikey1234",
+        },
+        body: JSON.stringify({ steps }),
+      });
+
+      if (response.ok) {
+        console.log("✅ Steps reordered and saved successfully");
+      } else {
+        console.error("❌ Failed to save reordered steps");
+      }
+    } catch (error) {
+      console.error("❌ Error saving reordered steps:", error);
+    }
+  };
+
+  const saveTourToDatabase = async () => {
+    if (!tourName.trim()) {
+      alert("Please enter a tour name");
+      return;
+    }
+
+    if (tourSteps.length === 0) {
+      alert("No steps to save");
+      return;
+    }
+
+    setIsSaving(true);
+    try {
+      // Get the mother URL from the first step
+      const motherUrl = tourSteps[0]?.url || "unknown";
+
+      // Prepare step data in the format you specified
+      const formattedSteps = tourSteps.map((step, index) => ({
+        stepNumber: index + 1,
+        textContent: step.textContent || "No text content",
+        elementType: step.elementType,
+        elementId: step.id || "No ID",
+        selector: step.selector,
+        url: step.url,
+        clickable: step.isClickable ? "Yes" : "No",
+        MessageToUser: step.MessageToUser || "", // Include the user message
+      }));
+
+      const tourData = {
+        name: tourName.trim(),
+        motherUrl: motherUrl,
+        totalSteps: tourSteps.length,
+        stepsOrder: tourSteps.map((_, index) => index + 1), // Step numbers in order
+        steps: formattedSteps,
+      };
+
+      const response = await fetch("/api/Buildtour/save", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: "Bearer apikey1234",
+        },
+        body: JSON.stringify(tourData),
+      });
+
+      if (response.ok) {
+        const result = await response.json();
+        console.log("✅ Tour saved successfully:", result);
+        alert(`Tour "${tourName}" saved successfully!`);
+        setShowSaveModal(false);
+        setTourName("");
+        // Optionally clear the steps after saving
+        // await clearSteps();
+      } else {
+        const error = await response.json();
+        console.error("❌ Failed to save tour:", error);
+        alert("Failed to save tour. Please try again.");
+      }
+    } catch (error) {
+      console.error("❌ Error saving tour:", error);
+      alert("Error saving tour. Please try again.");
+    } finally {
+      setIsSaving(false);
+    }
   };
 
   return (
@@ -184,8 +368,8 @@ export default function BuildTourPage() {
                 </h3>
                 <p className="text-gray-600">
                   {isConnected
-                    ? "Connected - Receiving tour data"
-                    : "Waiting for extension..."}
+                    ? "Connected - Smart polling active"
+                    : "Connecting to tour data..."}
                 </p>
               </div>
             </div>
@@ -265,14 +449,30 @@ export default function BuildTourPage() {
             <h3 className="text-xl font-semibold text-gray-900">
               Recorded Tour Steps
             </h3>
-            {tourSteps.length > 0 && (
+            <div className="flex space-x-2">
               <button
-                onClick={clearSteps}
-                className="px-4 py-2 bg-red-100 text-red-700 rounded-lg hover:bg-red-200 transition-colors"
+                onClick={fetchTourSteps}
+                className="px-4 py-2 bg-blue-100 text-blue-700 rounded-lg hover:bg-blue-200 transition-colors"
               >
-                Clear Steps
+                Refresh
               </button>
-            )}
+              {tourSteps.length > 0 && (
+                <>
+                  <button
+                    onClick={() => setShowSaveModal(true)}
+                    className="px-4 py-2 bg-green-100 text-green-700 rounded-lg hover:bg-green-200 transition-colors"
+                  >
+                    💾 Save Tour
+                  </button>
+                  <button
+                    onClick={clearSteps}
+                    className="px-4 py-2 bg-red-100 text-red-700 rounded-lg hover:bg-red-200 transition-colors"
+                  >
+                    Clear Steps
+                  </button>
+                </>
+              )}
+            </div>
           </div>
 
           {tourSteps.length === 0 ? (
@@ -296,96 +496,96 @@ export default function BuildTourPage() {
                     <div className="flex-1">
                       <div className="flex items-center space-x-3 mb-2">
                         <span className="bg-indigo-100 text-indigo-600 rounded-full w-8 h-8 flex items-center justify-center text-sm font-semibold">
-                          {step.stepNumber}
+                          {index + 1}
                         </span>
-                        <div className="flex items-center space-x-2">
-                          <span className="inline-block bg-blue-100 text-blue-800 text-xs px-2 py-1 rounded-full font-medium">
-                            {step.elementType}
-                          </span>
-                          {step.id && (
-                            <span className="inline-block bg-green-100 text-green-800 text-xs px-2 py-1 rounded-full font-medium">
-                              #{step.id}
-                            </span>
-                          )}
-                          {step.isClickable && (
-                            <span className="inline-block bg-purple-100 text-purple-800 text-xs px-2 py-1 rounded-full font-medium">
-                              clickable
-                            </span>
-                          )}
+                        <div className="flex space-x-1">
+                          <button
+                            onClick={() => moveStepUp(index)}
+                            disabled={index === 0}
+                            className={`p-1 rounded ${
+                              index === 0
+                                ? "text-gray-300 cursor-not-allowed"
+                                : "text-blue-600 hover:bg-blue-100 hover:text-blue-800"
+                            }`}
+                            title="Move step up"
+                          >
+                            ↑
+                          </button>
+                          <button
+                            onClick={() => moveStepDown(index)}
+                            disabled={index === tourSteps.length - 1}
+                            className={`p-1 rounded ${
+                              index === tourSteps.length - 1
+                                ? "text-gray-300 cursor-not-allowed"
+                                : "text-blue-600 hover:bg-blue-100 hover:text-blue-800"
+                            }`}
+                            title="Move step down"
+                          >
+                            ↓
+                          </button>
                         </div>
                       </div>
 
                       <div className="ml-11 space-y-2">
-                        <p className="font-mono text-sm text-gray-700 bg-gray-100 px-2 py-1 rounded">
+                        <p className="text-gray-600 text-sm">
+                          <span className="font-semibold">
+                            Text In This Element:
+                          </span>{" "}
+                          {step.textContent ? (
+                            <span>
+                              &quot;{step.textContent.substring(0, 100)}
+                              {step.textContent.length > 100 ? "..." : ""}&quot;
+                            </span>
+                          ) : (
+                            <span className="text-gray-400 italic">
+                              No text content
+                            </span>
+                          )}
+                        </p>
+
+                        <p className="text-gray-600 text-sm">
+                          <span className="font-semibold">Element Type:</span>{" "}
+                          {step.elementType}
+                        </p>
+
+                        <p className="text-gray-600 text-sm">
+                          <span className="font-semibold">Element ID:</span>{" "}
+                          {step.id ? (
+                            <span>{step.id}</span>
+                          ) : (
+                            <span className="text-gray-400 italic">No ID</span>
+                          )}
+                        </p>
+
+                        <p className="text-gray-600 text-sm">
+                          <span className="font-semibold">Selector:</span>{" "}
                           {step.selector}
                         </p>
 
-                        {step.textContent && (
-                          <p className="text-gray-600 text-sm">
-                            <span className="font-semibold">Text:</span> &quot;
-                            {step.textContent.substring(0, 100)}
-                            {step.textContent.length > 100 ? "..." : ""}&quot;
-                          </p>
-                        )}
-
-                        {step.value && (
-                          <p className="text-gray-600 text-sm">
-                            <span className="font-semibold">Value:</span> &quot;
-                            {step.value}&quot;
-                          </p>
-                        )}
-
-                        {step.formData && (
-                          <div className="bg-yellow-50 p-2 rounded border border-yellow-200">
-                            <p className="text-yellow-800 text-xs font-semibold mb-1">
-                              Form Data:
-                            </p>
-                            <div className="text-xs text-yellow-700 space-y-1">
-                              {step.formData.type && (
-                                <div>Type: {step.formData.type}</div>
-                              )}
-                              {step.formData.placeholder && (
-                                <div>
-                                  Placeholder: {step.formData.placeholder}
-                                </div>
-                              )}
-                              {step.formData.required && (
-                                <div>Required: Yes</div>
-                              )}
-                              {step.formData.disabled && (
-                                <div>Disabled: Yes</div>
-                              )}
-                              {step.formData.checked !== undefined && (
-                                <div>
-                                  Checked:{" "}
-                                  {step.formData.checked ? "Yes" : "No"}
-                                </div>
-                              )}
-                            </div>
-                          </div>
-                        )}
-
-                        <div className="grid grid-cols-2 gap-2 text-xs text-gray-500">
-                          <div>
-                            Position: {Math.round(step.position.x)},{" "}
-                            {Math.round(step.position.y)}
-                          </div>
-                          <div>
-                            Size: {Math.round(step.position.width)} ×{" "}
-                            {Math.round(step.position.height)}
-                          </div>
-                        </div>
-
-                        {step.accessibility?.ariaLabel && (
-                          <p className="text-gray-600 text-xs">
-                            <span className="font-semibold">ARIA Label:</span>{" "}
-                            {step.accessibility.ariaLabel}
-                          </p>
-                        )}
-
-                        <p className="text-gray-500 text-xs truncate">
-                          {step.url}
+                        <p className="text-gray-600 text-sm truncate">
+                          <span className="font-semibold">URL:</span> {step.url}
                         </p>
+
+                        <p className="text-gray-600 text-sm">
+                          <span className="font-semibold">Clickable:</span>{" "}
+                          {step.isClickable ? "Yes" : "No"}
+                        </p>
+
+                        {/* User Message Input */}
+                        <div className="mt-3">
+                          <label className="block text-sm font-bold text-blue-600 mb-1">
+                            Write message for user:
+                          </label>
+                          <input
+                            type="text"
+                            value={step.MessageToUser || ""}
+                            onChange={(e) =>
+                              updateUserMessage(index, e.target.value)
+                            }
+                            placeholder="Enter a message to guide the user for this step..."
+                            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-black"
+                          />
+                        </div>
 
                         {/* DEBUG: Show raw data */}
                         <details className="mt-2">
@@ -418,10 +618,71 @@ export default function BuildTourPage() {
             </code>
           </p>
           <p className="text-xs text-gray-400 mt-1">
-            Data updates every 2 seconds
+            Smart polling every 5 seconds when page is visible
           </p>
         </div>
       </div>
+
+      {/* Save Tour Modal */}
+      {showSaveModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg p-6 w-full max-w-md mx-4">
+            <h3 className="text-xl font-semibold text-gray-900 mb-4">
+              Save Tour
+            </h3>
+
+            <div className="mb-4">
+              <label
+                htmlFor="tourName"
+                className="block text-sm font-medium text-gray-700 mb-2"
+              >
+                Tour Name *
+              </label>
+              <input
+                type="text"
+                id="tourName"
+                value={tourName}
+                onChange={(e) => setTourName(e.target.value)}
+                placeholder="Enter tour name..."
+                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                autoFocus
+              />
+            </div>
+
+            <div className="mb-4 p-3 bg-gray-50 rounded-md">
+              <p className="text-sm text-gray-600">
+                <strong>Tour Summary:</strong>
+              </p>
+              <p className="text-sm text-gray-600">
+                • Total Steps: {tourSteps.length}
+              </p>
+              <p className="text-sm text-gray-600">
+                • Mother URL: {tourSteps[0]?.url || "Unknown"}
+              </p>
+            </div>
+
+            <div className="flex space-x-3">
+              <button
+                onClick={() => {
+                  setShowSaveModal(false);
+                  setTourName("");
+                }}
+                className="flex-1 px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors"
+                disabled={isSaving}
+              >
+                Cancel
+              </button>
+              <button
+                onClick={saveTourToDatabase}
+                disabled={isSaving || !tourName.trim()}
+                className="flex-1 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors disabled:bg-gray-300 disabled:cursor-not-allowed"
+              >
+                {isSaving ? "Saving..." : "Save Tour"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

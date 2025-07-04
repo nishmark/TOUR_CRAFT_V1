@@ -12,9 +12,9 @@ import {
 import { Bars3Icon, BellIcon, XMarkIcon } from "@heroicons/react/24/outline";
 import { PlusIcon } from "@heroicons/react/20/solid";
 import { useRouter } from "next/navigation";
-import { signOut } from "next-auth/react";
 import { useSession } from "next-auth/react";
 import Image from "next/image";
+import { signOutUser } from "../actions/auth";
 
 const navigation = [
   { name: "Dashboard", href: "/DashboardPage", current: true },
@@ -34,7 +34,8 @@ export default function Example() {
   const { data: session, status } = useSession();
 
   const handleSignOut = async () => {
-    await signOut({ callbackUrl: "/" });
+    await signOutUser();
+    router.push("/");
   };
 
   // If not logged in, show login button
