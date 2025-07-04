@@ -38,6 +38,7 @@ export default function Page() {
   const [tours, setTours] = useState<Tour[]>([]);
   const [loading, setLoading] = useState(false);
   const [toursLoading, setToursLoading] = useState(false);
+  const [deletingTours, setDeletingTours] = useState<Set<string>>(new Set());
 
   useEffect(() => {
     if (session?.user?.email) {
@@ -105,6 +106,41 @@ export default function Page() {
       hour: "2-digit",
       minute: "2-digit",
     });
+  };
+
+  const deleteTour = async (tourId: string, tourName: string) => {
+    if (!confirm(`Are you sure you want to delete the tour "${tourName}"? This action cannot be undone.`)) {
+      return;
+    }
+
+    setDeletingTours(prev => new Set(prev).add(tourId));
+
+    try {
+      const response = await fetch(`/api/tours/${tourId}`, {
+        method: 'DELETE',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      });
+
+      if (response.ok) {
+        // Remove the tour from the local state
+        setTours(prev => prev.filter(tour => tour.id !== tourId));
+        alert(`Tour "${tourName}" has been deleted successfully.`);
+      } else {
+        const error = await response.json();
+        alert(`Failed to delete tour: ${error.message || 'Unknown error'}`);
+      }
+    } catch (error) {
+      console.error('Error deleting tour:', error);
+      alert('An error occurred while deleting the tour. Please try again.');
+    } finally {
+      setDeletingTours(prev => {
+        const newSet = new Set(prev);
+        newSet.delete(tourId);
+        return newSet;
+      });
+    }
   };
 
   return (
@@ -181,6 +217,27 @@ export default function Page() {
                           <p className="text-sm text-gray-600">
                             URL: {tour.motherUrl}
                           </p>
+                        </div>
+                        <div className="flex space-x-2">
+                          <button
+                            onClick={() => deleteTour(tour.id, tour.name)}
+                            disabled={deletingTours.has(tour.id)}
+                            className="inline-flex items-center px-3 py-1.5 border border-transparent text-xs font-medium rounded-md text-white bg-red-600 hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 disabled:bg-gray-400 disabled:cursor-not-allowed transition-colors"
+                          >
+                            {deletingTours.has(tour.id) ? (
+                              <>
+                                <svg className="animate-spin -ml-1 mr-2 h-3 w-3 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                                </svg>
+                                Deleting...
+                              </>
+                            ) : (
+                              <>
+                                🗑️ Delete
+                              </>
+                            )}
+                          </button>
                         </div>
                       </div>
 

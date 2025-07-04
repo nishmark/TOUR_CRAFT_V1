@@ -18,6 +18,12 @@
       "all_frames": false
     }
   ],
+  "web_accessible_resources": [
+    {
+      "resources": ["debug-extension.js"],
+      "matches": ["http://*/*", "https://*/*"]
+    }
+  ],
   "background": {
     "service_worker": "background.js"
   }

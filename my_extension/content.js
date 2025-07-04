@@ -3,8 +3,31 @@ let isTourBuilding = false;
 let highlightedElement = null;
 let stepCounter = 0;
 
-const API_ENDPOINT = "http://localhost:3000/api/Buildtour";
-const API_KEY = "apikey1234";
+// Dynamic API endpoint detection
+function getApiEndpoint() {
+  console.log("🔍 Checking hostname:", window.location.hostname);
+  console.log("🔍 Full URL:", window.location.href);
+
+  // For testing, always use localhost
+  // Comment out the line below when ready for production
+  return "http://localhost:3000/api/Buildtour";
+  
+  // Check if we're on localhost (development)
+  if (
+    window.location.hostname === "localhost" ||
+    window.location.hostname === "127.0.0.1"
+  ) {
+    console.log("🔧 Development mode detected, using localhost API");
+    return "http://localhost:3000/api/Buildtour";
+  }
+  // Production - use Vercel URL
+  console.log("🚀 Production mode detected, using Vercel API");
+  return "https://tour-craft-v1.vercel.app/api/Buildtour";
+}
+
+const API_ENDPOINT = getApiEndpoint();
+
+console.log("🎯 Using API endpoint:", API_ENDPOINT);
 
 // Create highlight overlay
 function createHighlightOverlay() {
@@ -181,7 +204,7 @@ function extractElementData(element) {
 
     // Tour metadata
     timestamp: new Date().toISOString(),
-    stepNumber: ++stepCounter,
+    stepNumber: stepCounter + 1, // Use stepCounter + 1 instead of ++stepCounter
 
     // Additional element properties
     scrollTop: element.scrollTop,
@@ -202,8 +225,11 @@ function extractElementData(element) {
   };
 }
 
-// Send data to API - Fire and Forget version
-async function sendTourData(elementData) {
+// Send data to API with retry mechanism
+async function sendTourData(elementData, retryCount = 0) {
+  const maxRetries = 3;
+  const retryDelay = 1000 * (retryCount + 1); // Exponential backoff
+
   console.log("🚀 Sending tour data to:", API_ENDPOINT);
   console.log("📊 Element data being sent:", elementData);
 
@@ -218,19 +244,75 @@ async function sendTourData(elementData) {
 
   console.log("📦 Full payload:", payload);
 
-  // Just send the data without worrying about the response
-  fetch(API_ENDPOINT, {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      Authorization: `Bearer ${API_KEY}`,
-    },
-    body: JSON.stringify(payload),
-  });
+  try {
+    const response = await fetch(API_ENDPOINT, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(payload),
+    });
 
-  // Always show success since we know the API is working
-  console.log("✅ Tour data sent!");
-  showNotification(`Step ${elementData.stepNumber} recorded! ✅`, "success");
+    if (response.ok) {
+      // Increment step counter only after successful API call
+      stepCounter++;
+      console.log("✅ Tour data sent successfully! Step:", stepCounter);
+      showNotification(`Step ${stepCounter} recorded! ✅`, "success");
+
+      // Notify popup about the new step
+      chrome.runtime.sendMessage({
+        action: "stepRecorded",
+        stepCount: stepCounter,
+      });
+    } else {
+      console.error("❌ API error:", response.status, response.statusText);
+
+      // Retry on server errors (5xx) or rate limiting (429)
+      if (
+        (response.status >= 500 || response.status === 429) &&
+        retryCount < maxRetries
+      ) {
+        console.log(
+          `🔄 Retrying in ${retryDelay}ms... (attempt ${
+            retryCount + 1
+          }/${maxRetries})`
+        );
+        showNotification(`Retrying step ${elementData.stepNumber}...`, "info");
+
+        setTimeout(() => {
+          sendTourData(elementData, retryCount + 1);
+        }, retryDelay);
+        return;
+      }
+
+      showNotification(
+        `Step ${elementData.stepNumber} failed (API error: ${response.status})`,
+        "error"
+      );
+    }
+  } catch (error) {
+    console.error("❌ Network error:", error);
+
+    // Retry on network errors
+    if (retryCount < maxRetries) {
+      console.log(
+        `🔄 Retrying in ${retryDelay}ms... (attempt ${
+          retryCount + 1
+        }/${maxRetries})`
+      );
+      showNotification(`Retrying step ${elementData.stepNumber}...`, "info");
+
+      setTimeout(() => {
+        sendTourData(elementData, retryCount + 1);
+      }, retryDelay);
+      return;
+    }
+
+    showNotification(
+      `Step ${elementData.stepNumber} failed (network error)`,
+      "error"
+    );
+  }
 }
 
 // Show notification
@@ -355,6 +437,57 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
 });
 
 console.log("🎯 Tour Builder content script loaded on:", window.location.href);
+
+// Add global flag for debugging
+window.tourBuilderLoaded = true;
+
+// Add manual test function
+window.testTourAPI = async function () {
+  console.log("🧪 Manual API Test");
+
+  try {
+    const response = await fetch(API_ENDPOINT, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        tourData: { test: true, stepNumber: 999 },
+        metadata: { debug: true },
+      }),
+    });
+
+    console.log("📡 Response Status:", response.status);
+    console.log("📡 Response Status Text:", response.statusText);
+
+    const responseText = await response.text();
+    console.log("📡 Response Body:", responseText);
+
+    if (response.ok) {
+      console.log("✅ API Test Successful!");
+    } else {
+      console.log("❌ API Test Failed!");
+    }
+  } catch (error) {
+    console.error("❌ API Test Error:", error);
+  }
+};
+
+// Load debug utilities
+if (typeof window.tourBuilderDebug === "undefined") {
+  console.log("🔧 Loading debug utilities...");
+
+  // Create debug script element
+  const debugScript = document.createElement("script");
+  debugScript.src = chrome.runtime.getURL("debug-extension.js");
+  debugScript.onload = function () {
+    console.log("✅ Debug utilities loaded successfully");
+  };
+  debugScript.onerror = function () {
+    console.error("❌ Failed to load debug utilities");
+  };
+  document.head.appendChild(debugScript);
+}
 
 // Verify content script is working
 if (typeof chrome !== "undefined" && chrome.runtime) {

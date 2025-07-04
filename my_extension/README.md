@@ -1,85 +1,168 @@
-# Tour Builder Chrome Extension
+# 🎯 Tour Builder Chrome Extension
 
-A Chrome extension for building guided tours by tracking user interactions on websites. Perfect for creating interactive onboarding flows and product tours.
+A Chrome extension for building guided tours by tracking user interactions on any website.
 
-## Files Created
+## ✨ Features
 
-- **manifest.json** - Extension configuration file with permissions
-- **popup.html** - The tour builder control interface
-- **popup.css** - Modern styling for the popup
-- **popup.js** - Interactive functionality and API communication
-- **content.js** - Main content script for element detection and highlighting
-- **background.js** - Service worker for message passing
-- **highlight.css** - CSS for element highlighting during tour building
+- **Cross-domain compatibility**: Works on both localhost and production (Vercel)
+- **Real-time recording**: Click elements to record tour steps instantly
+- **Visual feedback**: Hover highlighting and click notifications
+- **Comprehensive data capture**: Records element properties, styles, and context
+- **Dashboard integration**: Sends data to your Tour Craft dashboard
 
-## How to Install
+## 🚀 Quick Start
 
-1. Open Chrome browser
-2. Go to `chrome://extensions/`
-3. Enable "Developer mode" (toggle in top right)
-4. Click "Load unpacked"
-5. Select this folder (my_extension)
-6. The extension should now appear in your browser toolbar
+### 1. Load the Extension
 
-## How to Use
+1. Open Chrome and go to `chrome://extensions/`
+2. Enable "Developer mode" (toggle in top right)
+3. Click "Load unpacked" and select the `my_extension` folder
+4. The extension icon should appear in your toolbar
 
-1. **Set up your webapp**: Open `http://localhost:3000/Buildtour` in your browser
-2. **Start building**: Click the extension icon and press "Start Building Tour"
-3. **Navigate**: Go to the website where you want to build the tour
-4. **Record steps**:
-   - Hover over elements to see them highlighted in red
-   - Click on elements to record them as tour steps
-   - Each click sends data to your API endpoint
-5. **Stop building**: Click "Stop Building" when finished
+### 2. Test the Extension
 
-## Features
+1. Open the test page: `my_extension/test-extension.html`
+2. Click the extension icon and click "Start Tour Building"
+3. Click on any elements on the page
+4. Check your dashboard: https://tour-craft-v1.vercel.app/Buildtour
 
-- 🎯 **Element Detection**: Automatically detects and highlights DOM elements
-- 📊 **Real-time Tracking**: Sends element data to your API as you click
-- 🔍 **Smart Selectors**: Generates reliable CSS selectors for elements
-- 📍 **Position Tracking**: Captures element positions and dimensions
-- 🎨 **Visual Feedback**: Live highlighting and notifications
-- 📈 **Step Counter**: Tracks number of recorded steps
-- 🔄 **Status Management**: Shows building status in real-time
+## 🔧 How It Works
 
-## Data Sent to API
+### Dynamic API Endpoint Detection
 
-Each click sends this data structure to `http://localhost:3000/Buildtour`:
+The extension automatically detects your environment:
 
-```json
-{
-  "tourData": {
-    "selector": "#submit-button",
-    "tagName": "button",
-    "textContent": "Submit Form",
-    "attributes": { "id": "submit-button", "class": "btn primary" },
-    "position": { "x": 300, "y": 150, "width": 120, "height": 40 },
-    "viewportPosition": { "x": 300, "y": 150 },
-    "timestamp": "2024-01-15T10:30:00Z",
-    "stepNumber": 1,
-    "url": "https://example.com/form"
-  },
-  "metadata": {
-    "userAgent": "Mozilla/5.0...",
-    "url": "https://example.com/form",
-    "title": "Contact Form"
-  }
-}
+- **Development**: Uses `http://localhost:3000/api/Buildtour`
+- **Production**: Uses `https://tour-craft-v1.vercel.app/api/Buildtour`
+
+### Data Flow
+
+1. **Content Script** (`content.js`): Injected into web pages
+2. **Event Listeners**: Capture mouse hover and click events
+3. **Data Extraction**: Collects comprehensive element information
+4. **API Communication**: Sends data to your backend
+5. **Visual Feedback**: Shows notifications and highlights
+
+## 🛠️ Troubleshooting
+
+### Extension Not Working?
+
+1. **Check Console**: Open DevTools (F12) and look for errors
+2. **Reload Extension**: Go to `chrome://extensions/` and click the refresh icon
+3. **Check Permissions**: Ensure the extension has access to the current site
+4. **Test API**: Use the debug script to test connectivity
+
+### Debug Commands
+
+Open the browser console and run:
+
+```javascript
+// Test API connectivity
+window.tourBuilderDebug.testApiConnection();
+
+// Check extension status
+window.tourBuilderDebug.checkExtensionStatus();
+
+// Simulate tour building
+window.tourBuilderDebug.simulateTourBuilding();
 ```
 
-## API Configuration
+### Common Issues
 
-- **Endpoint**: `http://localhost:3000/Buildtour`
-- **Method**: POST
-- **Auth**: Bearer token with API key `apikey1234`
-- **Content-Type**: application/json
+#### "Content script not responding"
 
-## Customization
+- Refresh the page
+- Check if the site allows content scripts
+- Try a different website
 
-You can easily customize:
+#### "API error"
 
-- API endpoint in `content.js` (API_ENDPOINT constant)
-- API key in `content.js` (API_KEY constant)
-- Highlight colors in `highlight.css`
-- UI styling in `popup.css`
-- Data structure in the `extractElementData` function
+- Check your internet connection
+- Verify the API endpoint is correct
+- Check browser console for CORS errors
+
+#### "Extension not loading"
+
+- Ensure Developer mode is enabled
+- Check for syntax errors in extension files
+- Reload the extension
+
+## 📁 File Structure
+
+```
+my_extension/
+├── manifest.json          # Extension configuration
+├── popup.html            # Extension popup UI
+├── popup.js              # Popup functionality
+├── content.js            # Content script (injected into pages)
+├── background.js         # Background service worker
+├── highlight.css         # Styling for hover effects
+├── test-extension.html   # Test page for debugging
+├── debug-extension.js    # Debug utilities
+└── README.md            # This file
+```
+
+## 🔒 Security
+
+- **API Key**: Uses `tourcraft1234` for basic authentication
+- **CORS**: Configured to allow cross-origin requests
+- **Permissions**: Only requests necessary permissions
+
+⚠️ **Security Note**: The API key is currently hardcoded in the extension. For production use, consider implementing a more secure authentication method.
+
+## 🌐 Supported Environments
+
+- ✅ Localhost development
+- ✅ Vercel production deployment
+- ✅ Any website with content script permissions
+- ✅ Chrome, Edge, and other Chromium-based browsers
+
+## 📊 Data Captured
+
+For each clicked element, the extension captures:
+
+- **Basic Info**: Element type, ID, classes, selector
+- **Content**: Text content, HTML, form values
+- **Position**: Coordinates, dimensions, viewport position
+- **Styles**: Computed CSS properties
+- **Hierarchy**: Parent and child elements
+- **Accessibility**: ARIA attributes, roles
+- **Context**: Page URL, title, timestamp
+
+## 🔄 Development
+
+### Making Changes
+
+1. Edit the files in `my_extension/`
+2. Go to `chrome://extensions/`
+3. Click the refresh icon on your extension
+4. Test on a new page
+
+### Adding Features
+
+- **New UI**: Edit `popup.html` and `popup.js`
+- **New Functionality**: Edit `content.js`
+- **Styling**: Edit `highlight.css`
+- **Background Tasks**: Edit `background.js`
+
+## 📞 Support
+
+If you encounter issues:
+
+1. Check the browser console for errors
+2. Use the debug commands above
+3. Test with the provided test page
+4. Verify your API endpoints are working
+
+## 🎉 Success Indicators
+
+- ✅ Extension icon appears in toolbar
+- ✅ "Start Tour Building" button works
+- ✅ Hover effects appear on elements
+- ✅ Click notifications show up
+- ✅ Data appears in your dashboard
+- ✅ Console shows "Tour data sent successfully!"
+
+---
+
+**Happy Tour Building! 🎯**

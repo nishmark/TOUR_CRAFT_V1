@@ -51,6 +51,15 @@ document.addEventListener("DOMContentLoaded", function () {
     }, 5000);
   }
 
+  // Listen for step updates from content script
+  chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
+    if (request.action === "stepRecorded") {
+      stepCount = request.stepCount;
+      stepCounter.textContent = `Steps recorded: ${stepCount}`;
+      console.log("📊 Step recorded:", stepCount);
+    }
+  });
+
   // Send message to content script with better error handling
   function sendMessageToContentScript(action) {
     return new Promise((resolve) => {
@@ -137,6 +146,7 @@ document.addEventListener("DOMContentLoaded", function () {
 
     const response = await sendMessageToContentScript("startTourBuilding");
     if (response && response.success) {
+      stepCount = 0; // Reset step count when starting
       updateUI({ isTourBuilding: true, stepCount: 0 });
     } else {
       let errorMessage = "Failed to start tour building.";
@@ -185,19 +195,45 @@ document.addEventListener("DOMContentLoaded", function () {
   // Initialize on popup open
   initializeStatus();
 
-  // Update status every 2 seconds while popup is open
-  const statusInterval = setInterval(async () => {
-    if (isTourBuilding) {
-      const status = await sendMessageToContentScript("getTourStatus");
-      if (status) {
-        stepCount = status.stepCount || stepCount;
-        stepCounter.textContent = `Steps recorded: ${stepCount}`;
+  // Update status every 2 seconds while popup is open and tour is building
+  let statusInterval = null;
+
+  function startStatusUpdates() {
+    if (statusInterval) clearInterval(statusInterval);
+    statusInterval = setInterval(async () => {
+      if (isTourBuilding) {
+        const status = await sendMessageToContentScript("getTourStatus");
+        if (status) {
+          stepCount = status.stepCount || stepCount;
+          stepCounter.textContent = `Steps recorded: ${stepCount}`;
+        }
+      } else {
+        // Stop updates if tour is not building
+        stopStatusUpdates();
       }
+    }, 2000);
+  }
+
+  function stopStatusUpdates() {
+    if (statusInterval) {
+      clearInterval(statusInterval);
+      statusInterval = null;
     }
-  }, 2000);
+  }
 
   // Clean up interval when popup closes
   window.addEventListener("beforeunload", () => {
-    clearInterval(statusInterval);
+    stopStatusUpdates();
   });
+
+  // Start updates when tour building begins
+  const originalUpdateUI = updateUI;
+  updateUI = function (tourStatus) {
+    originalUpdateUI(tourStatus);
+    if (tourStatus.isTourBuilding) {
+      startStatusUpdates();
+    } else {
+      stopStatusUpdates();
+    }
+  };
 });

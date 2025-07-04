@@ -120,23 +120,7 @@ let tourSteps: Array<TourData & { metadata: unknown }> = [];
 
 export async function POST(request: NextRequest) {
   try {
-    // Check API key for basic authentication
-    const authHeader = request.headers.get("authorization");
-    const expectedApiKey = "Bearer apikey1234";
-
-    if (authHeader !== expectedApiKey) {
-      return NextResponse.json(
-        { error: "Unauthorized" },
-        {
-          status: 401,
-          headers: {
-            "Access-Control-Allow-Origin": "*",
-            "Access-Control-Allow-Methods": "POST, GET, OPTIONS, DELETE",
-            "Access-Control-Allow-Headers": "Content-Type, Authorization",
-          },
-        }
-      );
-    }
+    console.log("🔍 Received POST request to /api/Buildtour");
 
     // Parse the request body
     const body: RequestBody = await request.json();
@@ -174,7 +158,8 @@ export async function POST(request: NextRequest) {
       headers: {
         "Access-Control-Allow-Origin": "*",
         "Access-Control-Allow-Methods": "POST, GET, OPTIONS, DELETE",
-        "Access-Control-Allow-Headers": "Content-Type, Authorization",
+        "Access-Control-Allow-Headers": "Content-Type",
+        "Access-Control-Max-Age": "86400",
       },
     });
   } catch (error) {
@@ -190,7 +175,8 @@ export async function POST(request: NextRequest) {
         headers: {
           "Access-Control-Allow-Origin": "*",
           "Access-Control-Allow-Methods": "POST, GET, OPTIONS, DELETE",
-          "Access-Control-Allow-Headers": "Content-Type, Authorization",
+          "Access-Control-Allow-Headers": "Content-Type",
+          "Access-Control-Max-Age": "86400",
         },
       }
     );
@@ -200,6 +186,9 @@ export async function POST(request: NextRequest) {
 // GET endpoint to fetch stored tour steps
 export async function GET() {
   try {
+    console.log("🔍 Received GET request to /api/Buildtour");
+    console.log("📊 Returning", tourSteps.length, "tour steps");
+
     return NextResponse.json(
       {
         success: true,
@@ -210,7 +199,8 @@ export async function GET() {
         headers: {
           "Access-Control-Allow-Origin": "*",
           "Access-Control-Allow-Methods": "POST, GET, OPTIONS, DELETE",
-          "Access-Control-Allow-Headers": "Content-Type, Authorization",
+          "Access-Control-Allow-Headers": "Content-Type",
+          "Access-Control-Max-Age": "86400",
         },
       }
     );
@@ -222,7 +212,8 @@ export async function GET() {
         headers: {
           "Access-Control-Allow-Origin": "*",
           "Access-Control-Allow-Methods": "POST, GET, OPTIONS, DELETE",
-          "Access-Control-Allow-Headers": "Content-Type, Authorization",
+          "Access-Control-Allow-Headers": "Content-Type",
+          "Access-Control-Max-Age": "86400",
         },
       }
     );
@@ -232,24 +223,6 @@ export async function GET() {
 // PUT endpoint to update/reorder tour steps
 export async function PUT(request: NextRequest) {
   try {
-    // Check API key for basic authentication
-    const authHeader = request.headers.get("authorization");
-    const expectedApiKey = "Bearer apikey1234";
-
-    if (authHeader !== expectedApiKey) {
-      return NextResponse.json(
-        { error: "Unauthorized" },
-        {
-          status: 401,
-          headers: {
-            "Access-Control-Allow-Origin": "*",
-            "Access-Control-Allow-Methods": "POST, GET, OPTIONS, DELETE, PUT",
-            "Access-Control-Allow-Headers": "Content-Type, Authorization",
-          },
-        }
-      );
-    }
-
     // Parse the request body
     const body = await request.json();
     const { steps } = body;
@@ -270,7 +243,7 @@ export async function PUT(request: NextRequest) {
         headers: {
           "Access-Control-Allow-Origin": "*",
           "Access-Control-Allow-Methods": "POST, GET, OPTIONS, DELETE, PUT",
-          "Access-Control-Allow-Headers": "Content-Type, Authorization",
+          "Access-Control-Allow-Headers": "Content-Type",
         },
       }
     );
@@ -287,7 +260,7 @@ export async function PUT(request: NextRequest) {
         headers: {
           "Access-Control-Allow-Origin": "*",
           "Access-Control-Allow-Methods": "POST, GET, OPTIONS, DELETE, PUT",
-          "Access-Control-Allow-Headers": "Content-Type, Authorization",
+          "Access-Control-Allow-Headers": "Content-Type",
         },
       }
     );
@@ -301,7 +274,7 @@ export async function OPTIONS() {
     headers: {
       "Access-Control-Allow-Origin": "*",
       "Access-Control-Allow-Methods": "POST, GET, OPTIONS, DELETE, PUT",
-      "Access-Control-Allow-Headers": "Content-Type, Authorization",
+      "Access-Control-Allow-Headers": "Content-Type",
     },
   });
 }
@@ -324,7 +297,7 @@ export async function DELETE() {
         headers: {
           "Access-Control-Allow-Origin": "*",
           "Access-Control-Allow-Methods": "POST, GET, OPTIONS, DELETE",
-          "Access-Control-Allow-Headers": "Content-Type, Authorization",
+          "Access-Control-Allow-Headers": "Content-Type",
         },
       }
     );
@@ -341,7 +314,7 @@ export async function DELETE() {
         headers: {
           "Access-Control-Allow-Origin": "*",
           "Access-Control-Allow-Methods": "POST, GET, OPTIONS, DELETE",
-          "Access-Control-Allow-Headers": "Content-Type, Authorization",
+          "Access-Control-Allow-Headers": "Content-Type",
         },
       }
     );

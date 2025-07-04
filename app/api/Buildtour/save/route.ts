@@ -2,7 +2,15 @@ import { NextRequest, NextResponse } from "next/server";
 import { PrismaClient } from "@prisma/client";
 import { auth } from "@/auth";
 
-const prisma = new PrismaClient();
+// Initialize Prisma client with error handling
+let prisma: PrismaClient;
+
+try {
+  prisma = new PrismaClient();
+} catch (error) {
+  console.error("❌ Failed to initialize Prisma client:", error);
+  prisma = null as any;
+}
 
 interface TourSaveData {
   name: string;
@@ -44,13 +52,13 @@ export async function POST(request: NextRequest) {
 
     // Find or create API key (using a default one for now)
     let apiKey = await prisma.tcApiKey.findFirst({
-      where: { key: "apikey1234" },
+      where: { key: "tourcraft1234" },
     });
 
     if (!apiKey) {
       apiKey = await prisma.tcApiKey.create({
         data: {
-          key: "apikey1234",
+          key: "tourcraft1234",
           name: "Default API Key",
           domain: "localhost",
           isActive: true,

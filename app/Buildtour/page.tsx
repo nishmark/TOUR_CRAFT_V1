@@ -116,38 +116,20 @@ interface TourStep {
 export default function BuildTourPage() {
   const [tourSteps, setTourSteps] = useState<TourStep[]>([]);
   const [isConnected, setIsConnected] = useState(false);
+  const [isLocalhost, setIsLocalhost] = useState(false);
 
   const [showSaveModal, setShowSaveModal] = useState(false);
   const [tourName, setTourName] = useState("");
   const [isSaving, setIsSaving] = useState(false);
 
-  // Function to update user message for a specific step
-  const updateUserMessage = async (stepIndex: number, message: string) => {
-    try {
-      const updatedSteps = [...tourSteps];
-      updatedSteps[stepIndex] = {
-        ...updatedSteps[stepIndex],
-        MessageToUser: message,
-      };
-
-      setTourSteps(updatedSteps);
-
-      // Update the step in the backend
-      const response = await fetch("/api/Buildtour", {
-        method: "PUT",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: "Bearer apikey1234",
-        },
-        body: JSON.stringify({ steps: updatedSteps }),
-      });
-
-      if (!response.ok) {
-        console.error("Failed to update user message");
-      }
-    } catch (error) {
-      console.error("Error updating user message:", error);
-    }
+  // Function to update user message for a specific step (local only)
+  const updateUserMessage = (stepIndex: number, message: string) => {
+    const updatedSteps = [...tourSteps];
+    updatedSteps[stepIndex] = {
+      ...updatedSteps[stepIndex],
+      MessageToUser: message,
+    };
+    setTourSteps(updatedSteps);
   };
 
   // Fetch function for getting tour steps
@@ -157,7 +139,6 @@ export default function BuildTourPage() {
       if (response.ok) {
         const data = await response.json();
         setTourSteps(data.steps || []);
-
         setIsConnected(true);
       } else {
         setIsConnected(false);
@@ -168,11 +149,35 @@ export default function BuildTourPage() {
     }
   }, []);
 
-  // Smart Polling - only polls when page is visible
+  // Set localhost detection on client-side
+  useEffect(() => {
+    const checkLocalhost = () => {
+      const isLocalhost =
+        typeof window !== "undefined" &&
+        (window.location.hostname === "localhost" ||
+          window.location.hostname === "127.0.0.1");
+      const isBuildtourPage =
+        typeof window !== "undefined" &&
+        window.location.pathname === "/Buildtour";
+      setIsLocalhost(isLocalhost && isBuildtourPage);
+    };
+
+    checkLocalhost();
+  }, []);
+
+  // Smart Polling - only polls when page is visible AND not on localhost
   useEffect(() => {
     let interval: NodeJS.Timeout;
 
     const startPolling = () => {
+      // Don't start polling if we're on localhost development
+      if (isLocalhost) {
+        console.log("🔧 Local development detected - polling disabled");
+        // Just fetch once to get initial data
+        fetchTourSteps();
+        return;
+      }
+
       // Fetch immediately
       fetchTourSteps();
 
@@ -193,8 +198,10 @@ export default function BuildTourPage() {
     // Start polling when component mounts
     startPolling();
 
-    // Stop polling when page becomes hidden, resume when visible
+    // Stop polling when page becomes hidden, resume when visible (only for non-localhost)
     const handleVisibilityChange = () => {
+      if (isLocalhost) return; // Don't handle visibility changes on localhost
+
       if (document.visibilityState === "visible") {
         startPolling();
       } else {
@@ -208,7 +215,7 @@ export default function BuildTourPage() {
       stopPolling();
       document.removeEventListener("visibilitychange", handleVisibilityChange);
     };
-  }, [fetchTourSteps]);
+  }, [fetchTourSteps, isLocalhost]);
 
   const clearSteps = async () => {
     try {
@@ -258,7 +265,7 @@ export default function BuildTourPage() {
         method: "PUT",
         headers: {
           "Content-Type": "application/json",
-          Authorization: "Bearer apikey1234",
+          Authorization: "Bearer tourcraft1234",
         },
         body: JSON.stringify({ steps }),
       });
@@ -313,7 +320,7 @@ export default function BuildTourPage() {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          Authorization: "Bearer apikey1234",
+          Authorization: "Bearer tourcraft1234",
         },
         body: JSON.stringify(tourData),
       });
@@ -321,7 +328,7 @@ export default function BuildTourPage() {
       if (response.ok) {
         const result = await response.json();
         console.log("✅ Tour saved successfully:", result);
-        alert(`Tour "${tourName}" saved successfully!`);
+        alert(`Tour "${tourName}" saved successfully with all messages!`);
         setShowSaveModal(false);
         setTourName("");
         // Optionally clear the steps after saving
@@ -368,7 +375,9 @@ export default function BuildTourPage() {
                 </h3>
                 <p className="text-gray-600">
                   {isConnected
-                    ? "Connected - Smart polling active"
+                    ? isLocalhost
+                      ? "Connected - Local development mode (polling disabled)"
+                      : "Connected - Smart polling active"
                     : "Connecting to tour data..."}
                 </p>
               </div>
@@ -618,7 +627,9 @@ export default function BuildTourPage() {
             </code>
           </p>
           <p className="text-xs text-gray-400 mt-1">
-            Smart polling every 5 seconds when page is visible
+            {isLocalhost
+              ? "Local development mode - polling disabled"
+              : "Smart polling every 5 seconds when page is visible"}
           </p>
         </div>
       </div>
@@ -644,7 +655,7 @@ export default function BuildTourPage() {
                 value={tourName}
                 onChange={(e) => setTourName(e.target.value)}
                 placeholder="Enter tour name..."
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-black"
                 autoFocus
               />
             </div>
