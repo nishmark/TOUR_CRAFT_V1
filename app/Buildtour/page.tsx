@@ -116,7 +116,6 @@ interface TourStep {
 export default function BuildTourPage() {
   const [tourSteps, setTourSteps] = useState<TourStep[]>([]);
   const [isConnected, setIsConnected] = useState(false);
-  const [isLocalhost, setIsLocalhost] = useState(false);
 
   const [showSaveModal, setShowSaveModal] = useState(false);
   const [tourName, setTourName] = useState("");
