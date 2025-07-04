@@ -64,15 +64,18 @@ export async function GET(request: NextRequest) {
             ...tour,
             domain: tourDomain,
             url: tour.motherUrl,
-            steps: stepsData.map((step: any, index: number) => ({
-              id: step.id || `step-${index}`,
-              stepNumber: step.stepNumber || index + 1,
-              selector: step.selector || "",
-              textContent: step.textContent || step.description || "",
-              description: step.description || step.textContent || "",
-              MessageToUser: step.MessageToUser || step.message || "",
-              message: step.message || step.MessageToUser || "",
-            })),
+            steps: stepsData.map((step, index) => {
+              const stepData = step as Record<string, unknown>;
+              return {
+                id: stepData.id || `step-${index}`,
+                stepNumber: stepData.stepNumber || index + 1,
+                selector: stepData.selector || "",
+                textContent: stepData.textContent || stepData.description || "",
+                description: stepData.description || stepData.textContent || "",
+                MessageToUser: stepData.MessageToUser || stepData.message || "",
+                message: stepData.message || stepData.MessageToUser || "",
+              };
+            }),
           };
         } catch (error) {
           console.warn(`Failed to parse tour ${tour.id}:`, error);

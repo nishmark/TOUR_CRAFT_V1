@@ -116,7 +116,7 @@ interface TourStep {
 export default function BuildTourPage() {
   const [tourSteps, setTourSteps] = useState<TourStep[]>([]);
   const [isConnected, setIsConnected] = useState(false);
-  const [lastCount, setLastCount] = useState(0);
+
   const [showSaveModal, setShowSaveModal] = useState(false);
   const [tourName, setTourName] = useState("");
   const [isSaving, setIsSaving] = useState(false);
@@ -157,7 +157,7 @@ export default function BuildTourPage() {
       if (response.ok) {
         const data = await response.json();
         setTourSteps(data.steps || []);
-        setLastCount(data.steps?.length || 0);
+
         setIsConnected(true);
       } else {
         setIsConnected(false);
@@ -220,7 +220,7 @@ export default function BuildTourPage() {
       if (response.ok) {
         // Clear the UI state
         setTourSteps([]);
-        setLastCount(0);
+
         console.log("✅ Tour steps cleared successfully");
       } else {
         console.error("❌ Failed to clear tour steps");

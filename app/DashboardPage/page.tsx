@@ -154,7 +154,7 @@ export default function Page() {
               ) : tours.length === 0 ? (
                 <div className="text-center py-8">
                   <p className="text-gray-600">
-                    You haven't created any tours yet.
+                    You haven&apos;t created any tours yet.
                   </p>
                   <p className="text-sm text-gray-500 mt-2">
                     Start by crafting your first tour!
